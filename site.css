@@ -1,4 +1,4 @@
-/* TLFC site-wide styles, hosted on GitHub Pages. Built 2026-10-16 16:06. Generated: do not edit by hand. */
+/* TLFC site-wide styles, hosted on GitHub Pages. Built 2026-10-16 18:06. Generated: do not edit by hand. */
 /* mobile notch / status bar colour (iOS 26 Safari tints it from the body background).
    Page sections keep their own backgrounds, so content looks the same. */
 html,
@@ -195,3 +195,7 @@ body .header .header-nav-folder-item--active > a::before {
 @media (prefers-reduced-motion: reduce) {
   body .header .header-nav-folder-content { transform: none; transition: none !important; }
 }
+
+/* headings inside TLFC code: black by default (not the Squarespace theme's orange); white where the code says so */
+[data-tlfc-ready] { --headingExtraLargeColor:#111; --headingLargeColor:#111; --headingMediumColor:#111; --headingSmallColor:#111; }
+[data-tlfc-ready] :where(h1,h2,h3,h4,h5,h6) { color:#111; }

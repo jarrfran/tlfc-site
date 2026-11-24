@@ -1,3 +1,21 @@
+/* TLFC: Drive logo thumbnails keep their transparent background (adds "-pp" to small lh3 image links; photos are left alone) */
+(function(){
+  if (window.__tlfcAlphaFix) return; window.__tlfcAlphaFix = true;
+  var RE = /^(https:\/\/lh3\.googleusercontent\.com\/d\/[A-Za-z0-9_-]+=)([ws])(\d+)((?:-[a-z]+)*)$/;
+  function fix(img){
+    var s = img.getAttribute("src"); if (!s || s.indexOf("lh3.googleusercontent.com/d/") < 0) return;
+    var m = s.match(RE); if (!m || +m[3] > 600 || /-pp/.test(m[4])) return;
+    img.setAttribute("src", m[1] + m[2] + m[3] + m[4] + "-pp");
+  }
+  function scan(root){ if (root.tagName === "IMG") fix(root); if (root.querySelectorAll) root.querySelectorAll("img[src*='lh3.googleusercontent.com/d/']").forEach(fix); }
+  new MutationObserver(function(list){
+    list.forEach(function(m){
+      if (m.type === "attributes") fix(m.target);
+      else m.addedNodes.forEach(function(n){ if (n.nodeType === 1) scan(n); });
+    });
+  }).observe(document.documentElement, {childList: true, subtree: true, attributes: true, attributeFilter: ["src"]});
+  scan(document.documentElement);
+})();
 /* TLFC website code, hosted on GitHub Pages. Built 2026-10-27 13:10.
    Each Squarespace Code Block only holds  <div data-tlfc="NAME"></div>  and this file fills it in.
    Do not edit by hand: it is generated from the page sources. */

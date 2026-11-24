@@ -1,16 +1,36 @@
-/* TLFC: Drive logo thumbnails keep their transparent background (adds "-pp" to small lh3 image links; photos are left alone) */
+/* TLFC: Drive logo thumbnails keep their transparent background without being cropped.
+   Drive's resized thumbnails of some PNG logos come back with a black background. Square logos get the "-pp"
+   (transparent, square) version; other shapes load the original file. Photos (width over 600) are left alone. */
 (function(){
-  if (window.__tlfcAlphaFix) return; window.__tlfcAlphaFix = true;
-  var RE = /^(https:\/\/lh3\.googleusercontent\.com\/d\/[A-Za-z0-9_-]+=)([ws])(\d+)((?:-[a-z]+)*)$/;
+  if (window.__tlfcAlphaFix) return; window.__tlfcAlphaFix = 2;
+  var RE = /^(https:\/\/lh3\.googleusercontent\.com\/d\/([A-Za-z0-9_-]+))=([ws])(\d+)((?:-[a-z]+)*)$/;
+  var store = {}; try { store = JSON.parse(sessionStorage.getItem("tlfcLogoRatio") || "{}"); } catch (e) {}
+  function save(){ try { sessionStorage.setItem("tlfcLogoRatio", JSON.stringify(store)); } catch (e) {} }
+  function apply(img, base, size, ratio){
+    var src = (ratio > 0.97 && ratio < 1.03) ? base + "=w" + size + "-pp" : base;
+    img.dataset.tlfcLogo = "1";
+    var show = function(){ img.style.opacity = ""; };
+    img.addEventListener("load", show, {once: true}); img.addEventListener("error", show, {once: true});
+    img.setAttribute("src", src);
+    if (img.complete) show();
+  }
   function fix(img){
+    if (img.dataset.tlfcLogo) return;
     var s = img.getAttribute("src"); if (!s || s.indexOf("lh3.googleusercontent.com/d/") < 0) return;
-    var m = s.match(RE); if (!m || +m[3] > 600 || /-pp/.test(m[4])) return;
-    img.setAttribute("src", m[1] + m[2] + m[3] + m[4] + "-pp");
+    var m = s.match(RE); if (!m || +m[4] > 600) return;
+    var base = m[1], id = m[2], size = m[4];
+    img.dataset.tlfcLogo = "0";
+    if (store[id]) return apply(img, base, size, store[id]);
+    img.style.opacity = "0";
+    var probe = new Image();
+    probe.onload = function(){ var r = probe.naturalWidth / (probe.naturalHeight || 1); store[id] = Math.round(r * 1000) / 1000; save(); apply(img, base, size, r); };
+    probe.onerror = function(){ img.style.opacity = ""; };
+    probe.src = base + "=w64";
   }
   function scan(root){ if (root.tagName === "IMG") fix(root); if (root.querySelectorAll) root.querySelectorAll("img[src*='lh3.googleusercontent.com/d/']").forEach(fix); }
   new MutationObserver(function(list){
     list.forEach(function(m){
-      if (m.type === "attributes") fix(m.target);
+      if (m.type === "attributes"){ if (m.target.tagName === "IMG" && m.target.dataset.tlfcLogo === "1" && !/(=w\d+-pp|\/d\/[A-Za-z0-9_-]+)$/.test(m.target.getAttribute("src") || "")) delete m.target.dataset.tlfcLogo; fix(m.target); }
       else m.addedNodes.forEach(function(n){ if (n.nodeType === 1) scan(n); });
     });
   }).observe(document.documentElement, {childList: true, subtree: true, attributes: true, attributeFilter: ["src"]});
